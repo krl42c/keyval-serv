@@ -38,7 +38,7 @@ async fn root() -> &'static str {
     "Alive"
 }
 
-async fn send(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(conf): State<Config>, Json(input) : Json<EventInput>) -> (StatusCode, Json<handler::Event>) {
+async fn send(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(conf): State<Config>, Json(input) : Json<EventInput>) -> (StatusCode, Json<String>) {
     let etype = handler::EventType::WRITE;
     let event_sender = handler::Sender {
         addr: Some(addr.ip())
@@ -46,8 +46,12 @@ async fn send(ConnectInfo(addr): ConnectInfo<SocketAddr>, State(conf): State<Con
     
     info!("{}: event sent from {}", etype, addr);
     let event = handler::Event::new(event_sender, etype, input.key, input.value);
-    let _ = conf.db.store(&event);
-    return (StatusCode::CREATED, Json(event));
+
+    if let Err(_e) = conf.db.store(&event) {
+        return (StatusCode::BAD_REQUEST, Json(String::from("Internal Error")));
+    } else {
+        return (StatusCode::OK, Json(String::from("OK")));
+    }
 }
 
 async fn get_entry(ConnectInfo(_addr): ConnectInfo<SocketAddr>, State(conf): State<Config>, Json(input) : Json<EventInput>) -> (StatusCode, Json<String>) {
