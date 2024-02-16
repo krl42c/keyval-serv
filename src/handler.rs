@@ -73,8 +73,8 @@ impl Database {
     }
 
     pub fn read(&self, key: String) -> Result<Option<String>, ReadError> {
-        if let value = self.map.lock().unwrap().get(&key).cloned() {
-            return Ok(value)
+        if let Some(value) = self.map.lock().unwrap().get(&key).cloned() {
+            return Ok(Some(value))
         } else {
             return Err(ReadError::NO_KEY_FOUND);
         }
